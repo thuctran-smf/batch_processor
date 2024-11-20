@@ -101,3 +101,4 @@ def process_records(records: List[str],
     """Convenience function for batch processing."""
     processor = BatchProcessor(constraints)
     return list(processor.create_batches(records))
+

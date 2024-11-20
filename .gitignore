@@ -1,0 +1,6 @@
+# Write to .gitignore
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+batch_processor_venv/

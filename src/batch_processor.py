@@ -79,6 +79,9 @@ class BatchProcessor:
 
     def create_batches(self, records: List[str]) -> Iterator[List[str]]:
         """Process records into appropriately sized batches."""
+        if records is None or not isinstance(records, list):
+            raise TypeError("'records' must be a non-empty list")
+        
         try:
             logger.info("Starting batch processing for %d records", len(records))
             current_batch: List[str] = []
@@ -94,12 +97,9 @@ class BatchProcessor:
 
                 record_size = self._get_record_size(record)
 
-                # Check if current batch is full
-                if (current_batch_size + record_size > self.constraints.max_batch_size_bytes or
-                    len(current_batch) >= self.constraints.max_records_per_batch):
+                if current_batch_size + record_size > self.constraints.max_batch_size_bytes or len(current_batch) >= self.constraints.max_records_per_batch:
                     if current_batch:
-                        logger.info("Yielding batch: %d records, %d bytes", 
-                                len(current_batch), current_batch_size)
+                        logger.info("Yielding batch: %d records, %d bytes", len(current_batch), current_batch_size)
                         self.metrics.batches_created += 1
                         yield current_batch
                     current_batch = []
@@ -108,12 +108,10 @@ class BatchProcessor:
                 current_batch.append(record)
                 current_batch_size += record_size
                 self.metrics.total_bytes_processed += record_size
-                logger.debug("Added record to batch. Current batch: %d records, %d bytes",
-                            len(current_batch), current_batch_size)
+                logger.debug("Added record to batch. Current batch: %d records, %d bytes", len(current_batch), current_batch_size)
 
             if current_batch:
-                logger.info("Yielding final batch: %d records, %d bytes",
-                            len(current_batch), current_batch_size)
+                logger.info("Yielding final batch: %d records, %d bytes", len(current_batch), current_batch_size)
                 self.metrics.batches_created += 1
                 yield current_batch
 

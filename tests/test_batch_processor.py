@@ -2,11 +2,12 @@
 tests/test_batch_processor.py
 Unit tests for the batch processor
 """
-
-import unittest
-from unittest.mock import patch
 import logging
 from src.batch_processor import BatchProcessor, BatchConstraints, process_records
+import sys
+import unittest
+from unittest.mock import patch
+
 
 class TestBatchProcessor(unittest.TestCase):
     def setUp(self):

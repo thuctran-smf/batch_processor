@@ -76,7 +76,8 @@ class TestBatchProcessor(unittest.TestCase):
         for invalid_batch, type_name in invalid_batches:
             with self.assertRaises(TypeError) as context:
                 list(self.processor.create_batches(invalid_batch))
-            self.assertIn("must be iterable", str(context.exception))
+            self.assertIn("must be a non-empty list", str(context.exception))
+
 
     def test_mixed_types_in_batch(self):
         """Test batch with mixed record types"""

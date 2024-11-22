@@ -28,8 +28,8 @@ jobs:
         
     - name: Run mypy type checking
       run: |
-        mypy src/
+        mypy -v src/
 
     - name: Run tests
       run: |
-        pytest tests/
+        pytest -v tests/

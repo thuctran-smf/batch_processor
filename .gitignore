@@ -5,4 +5,3 @@ __pycache__/
 .mypy_cache/
 batch_processor_venv/
 batch_processor.log
-

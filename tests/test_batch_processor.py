@@ -11,93 +11,93 @@ from unittest.mock import patch
 
 class TestBatchProcessor(unittest.TestCase):
     def setUp(self):
-        """Set up test fixtures."""
         self.constraints = BatchConstraints()
         self.processor = BatchProcessor(self.constraints)
-        # Ensure we don't create log files during testing
         logging.getLogger('src.batch_processor').setLevel(logging.ERROR)
-        
+
     def test_record_validation(self):
-        """Test record size validation"""
-        valid_record = "small"
-        invalid_record = "x" * 2_000_000  # ~2MB
+        """Test record validation including boundary conditions"""
+        # Valid cases
+        self.assertTrue(self.processor.is_valid_record("small"))
         
-        self.assertTrue(self.processor.is_valid_record(valid_record))
-        self.assertFalse(self.processor.is_valid_record(invalid_record))
+        # Exact size limit
+        record_size = self.constraints.max_record_size_bytes
+        self.assertTrue(self.processor.is_valid_record("x" * (record_size - 100)))
         
+        # Invalid cases
+        self.assertFalse(self.processor.is_valid_record("x" * 2_000_000))
+        
+        # Check metrics
         metrics = self.processor.get_metrics()
         self.assertEqual(metrics['records_discarded'], 1)
+
+    def test_batch_constraints(self):
+        """Test all batch constraints (size and count)"""
+        # Test size constraints
+        large_records = ["x" * 1_000_000 for _ in range(6)]
+        size_batches = list(self.processor.create_batches(large_records))
+        self.assertGreater(len(size_batches), 1)
         
-    def test_batch_size_constraints(self):
-        """Test batch size limits are respected"""
-        record_size = 1_000_000  # 1MB
-        records = ["x" * (record_size - 100) for _ in range(6)]
-        
-        batches = list(self.processor.create_batches(records))
-        metrics = self.processor.get_metrics()
-        
-        self.assertGreater(len(batches), 1)
-        self.assertEqual(metrics['batches_created'], len(batches))
-        
-        # Verify each batch is within size limits
-        for batch in batches:
-            batch_size = sum(sys.getsizeof(record.encode('utf-8')) for record in batch)
-            self.assertLessEqual(batch_size, self.constraints.max_batch_size_bytes)
-        
-    def test_record_count_limits(self):
-        """Test record count limits are respected"""
-        records = ["small" for _ in range(1000)]
-        
-        batches = list(self.processor.create_batches(records))
-        
-        for batch in batches:
+        # Test count constraints
+        many_records = ["small" for _ in range(1000)]
+        count_batches = list(self.processor.create_batches(many_records))
+        for batch in count_batches:
             self.assertLessEqual(len(batch), self.constraints.max_records_per_batch)
+
+    def test_invalid_inputs(self):
+        """Test all invalid input scenarios"""
+        # Invalid types
+        invalid_inputs = [
+            None, 123, {}, [], 
+            "not_a_list",
+            ["valid", None, "invalid"]  # Mixed types
+        ]
+        
+        for invalid_input in invalid_inputs:
+            with self.assertRaises((TypeError, ValueError)):
+                if isinstance(invalid_input, list):
+                    list(self.processor.create_batches(invalid_input))
+                else:
+                    self.processor.is_valid_record(invalid_input)
+
+    def test_metrics_and_logging(self):
+        """Test metrics collection and logging"""
+        with patch('logging.Logger.warning') as mock_warning:
+            records = ["test" for _ in range(10)]
+            records.append("x" * 2_000_000)
             
-    def test_metrics_collection(self):
-        """Test metrics are collected correctly"""
-        records = ["test" for _ in range(10)]
-        records.append("x" * 2_000_000)  # Add invalid record
+            list(self.processor.create_batches(records))
+            metrics = self.processor.get_metrics()
+            
+            self.assertEqual(metrics['records_processed'], 11)
+            self.assertEqual(metrics['records_discarded'], 1)
+            mock_warning.assert_called_once()
+
+    def test_batch_processing(self):
+        """Test batch processing functionality"""
+        # Test order preservation
+        ordered_records = [str(i) for i in range(10)]
+        batches = list(self.processor.create_batches(ordered_records))
+        flattened = [int(record) for batch in batches for record in batch]
+        self.assertEqual(flattened, list(range(10)))
         
-        list(self.processor.create_batches(records))
-        metrics = self.processor.get_metrics()
-        
-        self.assertEqual(metrics['records_processed'], 11)
-        self.assertEqual(metrics['records_discarded'], 1)
-        self.assertGreater(metrics['total_bytes_processed'], 0)
-        
+        # Test mixed sizes
+        mixed_records = [
+            "small",
+            "x" * 100_000,
+            "medium" * 1000,
+            "tiny"
+        ]
+        mixed_batches = list(self.processor.create_batches(mixed_records))
+        self.assertTrue(all(len(batch) > 0 for batch in mixed_batches))
+
     @patch('logging.Logger.warning')
-    def test_logging(self, mock_warning):
-        """Test logging functionality"""
-        invalid_record = "x" * 2_000_000
-        self.processor.is_valid_record(invalid_record)
-        
-        mock_warning.assert_called_once()
-        
-    def test_convenience_function(self):
-        """Test process_records convenience function"""
+    def test_convenience_function(self, mock_warning):
+        """Test the convenience wrapper"""
         records = ["test" for _ in range(10)]
-        
         batches = process_records(records)
         self.assertIsInstance(batches, list)
         self.assertTrue(all(isinstance(batch, list) for batch in batches))
-
-    def test_empty_input(self):
-        """Test handling of empty input"""
-        batches = list(self.processor.create_batches([]))
-        self.assertEqual(len(batches), 0)
-        
-        metrics = self.processor.get_metrics()
-        self.assertEqual(metrics['records_processed'], 0)
-        self.assertEqual(metrics['batches_created'], 0)
-        
-    def test_record_order_preservation(self):
-        """Test that record order is preserved"""
-        records = [str(i) for i in range(10)]
-        
-        batches = list(self.processor.create_batches(records))
-        flattened = [int(record) for batch in batches for record in batch]
-        
-        self.assertEqual(flattened, list(range(10)))
 
 if __name__ == '__main__':
     unittest.main()

@@ -61,20 +61,21 @@ class BatchProcessor:
 
     def is_valid_record(self, record: str) -> bool:
         """Check if record meets size constraints."""
-        record_size = self._get_record_size(record)
-        is_valid = record_size <= self.constraints.max_record_size_bytes
+        if not isinstance(record, str):
+            raise TypeError(f"Record must be string, got {type(record).__name__}")
         
-        if not is_valid:
-            logger.warning(
-                "Record validation failed: size %d bytes exceeds limit of %d bytes",
-                record_size,
-                self.constraints.max_record_size_bytes
-            )
-            self.metrics.records_discarded += 1
-        else:
-            logger.debug("Record validated: size %d bytes", record_size)
+        try:
+            record_size = self._get_record_size(record)
+            is_valid = record_size <= self.constraints.max_record_size_bytes
             
-        return is_valid
+            if not is_valid:
+                logger.warning(
+                    f"Record discarded: size {record_size} bytes exceeds limit"
+                )
+                self.metrics.records_discarded += 1
+            return is_valid
+        except Exception as e:
+            raise TypeError(f"Error processing record: {str(e)}")
 
     def create_batches(self, records: List[str]) -> Iterator[List[str]]:
         """Process records into appropriately sized batches."""

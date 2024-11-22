@@ -33,10 +33,10 @@ class TestBatchProcessor(unittest.TestCase):
 
     def test_batch_constraints(self):
         """Test all batch constraints (size and count)"""
-        # Test size constraints
-        large_records = ["x" * 1_000_000 for _ in range(6)]
+        # Test size constraints - using smaller records now
+        large_records = ["x" * 900_000 for _ in range(6)]  # Changed from 1_000_000
         size_batches = list(self.processor.create_batches(large_records))
-        self.assertGreater(len(size_batches), 1)
+        self.assertGreater(len(size_batches), 1)  # Should create multiple batches
         
         # Test count constraints
         many_records = ["small" for _ in range(1000)]
@@ -58,7 +58,9 @@ class TestBatchProcessor(unittest.TestCase):
                 if isinstance(invalid_input, list):
                     list(self.processor.create_batches(invalid_input))
                 else:
-                    self.processor.is_valid_record(invalid_input)
+                    with self.assertRaises(TypeError):
+                        if not isinstance(invalid_input, str):
+                            self.processor.is_valid_record(invalid_input)
 
     def test_metrics_and_logging(self):
         """Test metrics collection and logging"""

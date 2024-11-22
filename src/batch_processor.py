@@ -83,47 +83,42 @@ class BatchProcessor:
             logger.info("Starting batch processing for %d records", len(records))
             current_batch: List[str] = []
             current_batch_size: int = 0
-            
+
             for idx, record in enumerate(records, 1):
                 logger.debug("Processing record %d/%d", idx, len(records))
                 self.metrics.records_processed += 1
-                
+
                 if not self.is_valid_record(record):
                     logger.info("Record %d skipped: size validation failed", idx)
                     continue
-                    
-                record_size = self._get_record_size(record)
-                
-                # Log when we're about to exceed batch limits
-                if (current_batch_size + record_size > self.constraints.max_batch_size_bytes):
-                    logger.info("Current batch would exceed size limit. Creating new batch")
-                elif (len(current_batch) >= self.constraints.max_records_per_batch):
-                    logger.info("Current batch would exceed record count limit. Creating new batch")
 
+                record_size = self._get_record_size(record)
+
+                # Check if current batch is full
                 if (current_batch_size + record_size > self.constraints.max_batch_size_bytes or
                     len(current_batch) >= self.constraints.max_records_per_batch):
                     if current_batch:
                         logger.info("Yielding batch: %d records, %d bytes", 
-                                  len(current_batch), current_batch_size)
+                                len(current_batch), current_batch_size)
                         self.metrics.batches_created += 1
                         yield current_batch
                     current_batch = []
                     current_batch_size = 0
-                
+
                 current_batch.append(record)
                 current_batch_size += record_size
                 self.metrics.total_bytes_processed += record_size
                 logger.debug("Added record to batch. Current batch: %d records, %d bytes",
-                           len(current_batch), current_batch_size)
-            
+                            len(current_batch), current_batch_size)
+
             if current_batch:
                 logger.info("Yielding final batch: %d records, %d bytes",
-                          len(current_batch), current_batch_size)
+                            len(current_batch), current_batch_size)
                 self.metrics.batches_created += 1
                 yield current_batch
-                
+
             logger.info("Batch processing completed. Metrics: %s", self.get_metrics())
-                
+
         except Exception as e:
             logger.error("Error processing batch: %s", str(e), exc_info=True)
             raise

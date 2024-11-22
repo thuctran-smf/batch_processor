@@ -55,9 +55,11 @@ class BatchProcessor:
         self.constraints = constraints
         self.metrics = BatchMetrics()
 
+
     def _get_record_size(self, record: str) -> int:
         """Calculate size of record in bytes."""
         return sys.getsizeof(record.encode('utf-8'))
+
 
     def is_valid_record(self, record: str) -> bool:
         """Check if record meets size constraints."""
@@ -76,6 +78,7 @@ class BatchProcessor:
             return is_valid
         except Exception as e:
             raise TypeError(f"Error processing record: {str(e)}")
+
 
     def create_batches(self, records: List[str]) -> Iterator[List[str]]:
         """Process records into appropriately sized batches."""
@@ -121,11 +124,13 @@ class BatchProcessor:
             logger.error("Error processing batch: %s", str(e), exc_info=True)
             raise
 
+
     def get_metrics(self) -> Dict[str, int]:
         """Return current processing metrics."""
         metrics = self.metrics.to_dict()
         logger.debug("Current metrics: %s", metrics)
         return metrics
+
 
 def process_records(records: List[str], 
                    constraints: BatchConstraints = BatchConstraints()) -> List[List[str]]:

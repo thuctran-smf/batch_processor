@@ -1,7 +1,8 @@
 """
 tests/test_batch_processor.py
-Unit tests for the batch processor
+Unit tests for verifying batch processing functionality.
 """
+
 import logging
 import sys
 import unittest
@@ -12,16 +13,20 @@ from src.batch_constraints import BatchConstraints
 
 
 class TestBatchProcessor(unittest.TestCase):
+    """Test suite for BatchProcessor class.
+    
+    Tests cover validation, constraints, error cases, and general processing.
+    """
+
     def setUp(self):
-        """Set up test fixtures."""
+        """Initialize test environment with default constraints."""
         self.constraints = BatchConstraints()
         self.processor = BatchProcessor(self.constraints)
         # Ensure we don't create log files during testing
         logging.getLogger('src.batch_processor').setLevel(logging.ERROR)
 
-    # Basic validation tests
     def test_record_validation(self):
-        """Test record size validation including boundary conditions"""
+        """Test record size validation including boundary conditions."""
         # Valid cases
         self.assertTrue(self.processor.is_valid_record("small"))
         
@@ -36,9 +41,8 @@ class TestBatchProcessor(unittest.TestCase):
         metrics = self.processor.get_metrics()
         self.assertEqual(metrics['records_discarded'], 1)
 
-    # Batch constraint tests
     def test_batch_constraints(self):
-        """Test all batch constraints (size and count)"""
+        """Test that batches respect size and count constraints."""
         # Test size constraints
         large_records = ["x" * 900_000 for _ in range(6)]
         size_batches = list(self.processor.create_batches(large_records))
@@ -50,9 +54,8 @@ class TestBatchProcessor(unittest.TestCase):
         for batch in count_batches:
             self.assertLessEqual(len(batch), self.constraints.max_records_per_batch)
 
-    # Invalid input tests
     def test_invalid_single_records(self):
-        """Test invalid record type validation"""
+        """Test validation of invalid record types."""
         invalid_records = [
             (None, "NoneType"),
             (123, "int"),
@@ -67,7 +70,7 @@ class TestBatchProcessor(unittest.TestCase):
             self.assertIn(f"must be string, got {type_name}", str(context.exception))
 
     def test_invalid_batch_inputs(self):
-        """Test invalid batch input types"""
+        """Test validation of invalid batch input types."""
         invalid_batches = [
             (None, "NoneType"),
             (123, "int"),
@@ -81,7 +84,7 @@ class TestBatchProcessor(unittest.TestCase):
             self.assertIn("must be a non-empty list", str(context.exception))
 
     def test_mixed_types_in_batch(self):
-        """Test batch with mixed record types"""
+        """Test handling of batches containing mixed types."""
         mixed_batch = [
             "valid_string",
             None,
@@ -94,9 +97,8 @@ class TestBatchProcessor(unittest.TestCase):
             list(self.processor.create_batches(mixed_batch))
         self.assertIn("must be string", str(context.exception))
 
-    # Edge case tests
     def test_empty_batch_handling(self):
-        """Test handling of empty batch"""
+        """Test processing of empty batch."""
         empty_batch = []
         result = list(self.processor.create_batches(empty_batch))
         
@@ -106,7 +108,7 @@ class TestBatchProcessor(unittest.TestCase):
         self.assertEqual(metrics['batches_created'], 0)
 
     def test_single_record_batch(self):
-        """Test batch with single record"""
+        """Test processing of single-record batch."""
         single_record = ["test_record"]
         batches = list(self.processor.create_batches(single_record))
         
@@ -114,9 +116,8 @@ class TestBatchProcessor(unittest.TestCase):
         self.assertEqual(len(batches[0]), 1)
         self.assertEqual(batches[0][0], "test_record")
 
-    # Batch processing tests
     def test_batch_processing(self):
-        """Test batch processing functionality"""
+        """Test core batch processing functionality and order preservation."""
         # Test order preservation
         ordered_records = [str(i) for i in range(10)]
         batches = list(self.processor.create_batches(ordered_records))
@@ -133,9 +134,8 @@ class TestBatchProcessor(unittest.TestCase):
         mixed_batches = list(self.processor.create_batches(mixed_records))
         self.assertTrue(all(len(batch) > 0 for batch in mixed_batches))
 
-    # Metrics and logging tests
     def test_metrics_and_logging(self):
-        """Test metrics collection and logging"""
+        """Test metrics collection and warning logging."""
         with patch('logging.Logger.warning') as mock_warning:
             records = ["test" for _ in range(10)]
             records.append("x" * 2_000_000)
@@ -147,9 +147,8 @@ class TestBatchProcessor(unittest.TestCase):
             self.assertEqual(metrics['records_discarded'], 1)
             mock_warning.assert_called_once()
 
-    # Convenience function test
     def test_convenience_function(self):
-        """Test the convenience wrapper"""
+        """Test the process_records convenience wrapper."""
         records = ["test" for _ in range(10)]
         batches = process_records(records)
         self.assertIsInstance(batches, list)

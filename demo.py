@@ -8,13 +8,23 @@ from src.batch_processor import BatchProcessor
 from src.batch_constraints import BatchConstraints
 
 def create_test_records():
-    # Create records that will force multiple batches
-    # Each record about 100KB (100,000 characters)
-    medium_record = "x" * 100_000
+    """Create test records that will demonstrate batch splitting.
     
-    # Create 1000 records (this should create multiple batches due to both
-    # max_records_per_batch=500 and max_batch_size_bytes=5MB limits)
-    return [f"{medium_record}-{i}" for i in range(1000)]
+    Creates:
+    - Many medium-sized records to force multiple batches
+    - A few invalid records to show error handling
+    """
+    # Regular records (100KB each)
+    medium_record = "x" * 100_000
+    regular_records = [f"{medium_record}-{i}" for i in range(750)]  # Will create multiple batches
+    
+    # Add some invalid records
+    oversized_record = "x" * 2_000_000  # 2MB (should be discarded)
+    empty_record = ""
+    special_chars = "🌟" * 1000
+    
+    return (regular_records + 
+            [oversized_record, empty_record, special_chars])
 
 def main():
     # Configure file handler with DEBUG level
@@ -36,20 +46,27 @@ def main():
     
     records = create_test_records()
     print(f"Created {len(records)} test records")
-    print(f"Each record size: ~100KB")
-    print(f"Total records size: ~100MB\n")
+    print(f"Each regular record size: ~100KB")
+    print(f"Including one oversized record (2MB)")
+    print(f"Total records size: ~{len(records) * 100 / 1000:.1f}MB\n")
     
     print("Processing records...")
     batches = list(processor.create_batches(records))
     
     print(f"\n=== Processing Results ===")
     print(f"Number of batches created: {len(batches)}")
+    
+    # Print summary of each batch
     for i, batch in enumerate(batches, 1):
         print(f"\nBatch {i}:")
         print(f"Number of records: {len(batch)}")
     
     print("\n=== Final Metrics ===")
-    print(processor.get_metrics())
+    metrics = processor.get_metrics()
+    print(f"Records processed: {metrics['records_processed']}")
+    print(f"Records discarded: {metrics['records_discarded']}")
+    print(f"Batches created: {metrics['batches_created']}")
+    print(f"Total bytes processed: {metrics['total_bytes_processed']:,}")
 
 if __name__ == "__main__":
     main()

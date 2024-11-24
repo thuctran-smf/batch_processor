@@ -4,7 +4,7 @@ Main batch processing system that handles record batching with size constraints.
 """
 
 import logging
-from typing import List, Iterator, Dict
+from typing import List, Iterator, Dict, Tuple
 import sys
 
 from .batch_constraints import BatchConstraints
@@ -91,7 +91,7 @@ class BatchProcessor:
                 records: List of string records to process
 
             Returns:
-                Iterator yielding lists of records as batches
+                Iterator yielding lists of records as batches, maintaining original order
 
             Raises:
                 TypeError: If records is not a list of strings
@@ -102,7 +102,7 @@ class BatchProcessor:
         
         try:
             logger.info("Starting batch processing for %d records", len(records))
-            current_batch: List[str] = []
+            current_batch: List[Tuple[int, str]] = []  # Store (index, record) pairs
             current_batch_size: int = 0
 
             for idx, record in enumerate(records, 1):
@@ -119,11 +119,12 @@ class BatchProcessor:
                     if current_batch:
                         logger.info("Yielding batch: %d records, %d bytes", len(current_batch), current_batch_size)
                         self.metrics.batches_created += 1
-                        yield current_batch
+                        # Sort by index and return only the records
+                        yield [r for _, r in sorted(current_batch)]
                     current_batch = []
                     current_batch_size = 0
 
-                current_batch.append(record)
+                current_batch.append((idx, record))  # Store index with record
                 current_batch_size += record_size
                 self.metrics.total_bytes_processed += record_size
                 logger.debug("Added record to batch. Current batch: %d records, %d bytes", len(current_batch), current_batch_size)
@@ -131,7 +132,8 @@ class BatchProcessor:
             if current_batch:
                 logger.info("Yielding final batch: %d records, %d bytes", len(current_batch), current_batch_size)
                 self.metrics.batches_created += 1
-                yield current_batch
+                # Sort by index and return only the records
+                yield [r for _, r in sorted(current_batch)]
 
             logger.info("Batch processing completed. Metrics: %s", self.get_metrics())
 

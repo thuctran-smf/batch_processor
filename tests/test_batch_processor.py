@@ -6,7 +6,9 @@ import logging
 import sys
 import unittest
 from unittest.mock import patch
-from src.batch_processor import BatchProcessor, BatchConstraints, process_records
+
+from src.batch_processor import BatchProcessor, process_records
+from src.batch_constraints import BatchConstraints
 
 
 class TestBatchProcessor(unittest.TestCase):
@@ -77,7 +79,6 @@ class TestBatchProcessor(unittest.TestCase):
             with self.assertRaises(TypeError) as context:
                 list(self.processor.create_batches(invalid_batch))
             self.assertIn("must be a non-empty list", str(context.exception))
-
 
     def test_mixed_types_in_batch(self):
         """Test batch with mixed record types"""

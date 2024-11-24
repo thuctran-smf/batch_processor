@@ -1,12 +1,14 @@
 """
 src/batch_processor.py
-Batch processing system with enhanced logging
+Batch processing system with logging
 """
 
 import logging
-from dataclasses import dataclass
-from typing import List, Iterator, Final, Dict
+from typing import List, Iterator, Dict
 import sys
+
+from .batch_constraints import BatchConstraints
+from .batch_metrics import BatchMetrics
 
 # Configure logging with both file and console output
 logging.basicConfig(
@@ -18,30 +20,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-
-@dataclass(frozen=True)
-class BatchConstraints:
-    """Defines size and count constraints for batch processing."""
-    max_record_size_bytes: Final[int] = 1_000_000  # 1 MB
-    max_batch_size_bytes: Final[int] = 5_000_000   # 5 MB
-    max_records_per_batch: Final[int] = 500
-
-@dataclass
-class BatchMetrics:
-    """Collects and maintains processing metrics."""
-    records_processed: int = 0
-    records_discarded: int = 0
-    batches_created: int = 0
-    total_bytes_processed: int = 0
-    
-    def to_dict(self) -> Dict[str, int]:
-        """Convert metrics to dictionary format."""
-        return {
-            "records_processed": self.records_processed,
-            "records_discarded": self.records_discarded,
-            "batches_created": self.batches_created,
-            "total_bytes_processed": self.total_bytes_processed
-        }
 
 class BatchProcessor:
     """Processes records into batches according to size and count constraints."""
@@ -55,11 +33,9 @@ class BatchProcessor:
         self.constraints = constraints
         self.metrics = BatchMetrics()
 
-
     def _get_record_size(self, record: str) -> int:
         """Calculate size of record in bytes."""
         return sys.getsizeof(record.encode('utf-8'))
-
 
     def is_valid_record(self, record: str) -> bool:
         """Check if record meets size constraints."""
@@ -78,7 +54,6 @@ class BatchProcessor:
             return is_valid
         except Exception as e:
             raise TypeError(f"Error processing record: {str(e)}")
-
 
     def create_batches(self, records: List[str]) -> Iterator[List[str]]:
         """Process records into appropriately sized batches."""
@@ -123,7 +98,6 @@ class BatchProcessor:
         except Exception as e:
             logger.error("Error processing batch: %s", str(e), exc_info=True)
             raise
-
 
     def get_metrics(self) -> Dict[str, int]:
         """Return current processing metrics."""

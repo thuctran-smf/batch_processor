@@ -3,8 +3,9 @@ demo.py
 Demonstration script for batch processor
 """
 
-from src.batch_processor import BatchProcessor, BatchConstraints
 import logging
+from src.batch_processor import BatchProcessor
+from src.batch_constraints import BatchConstraints
 
 def create_test_records():
     # Create records that will force multiple batches
@@ -52,4 +53,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

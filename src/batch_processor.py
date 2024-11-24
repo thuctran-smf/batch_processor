@@ -1,6 +1,6 @@
 """
 src/batch_processor.py
-Batch processing system with logging
+Main batch processing system that handles record batching with size constraints.
 """
 
 import logging
@@ -22,10 +22,20 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class BatchProcessor:
-    """Processes records into batches according to size and count constraints."""
+    """Processes records into batches according to size and count constraints.
+
+        Attributes:
+            constraints: BatchConstraints instance defining processing limits
+            metrics: BatchMetrics instance tracking processing statistics
+    """
     
     def __init__(self, constraints: BatchConstraints = BatchConstraints()) -> None:
-        """Initialize processor with given constraints."""
+        """Initialize processor with given constraints.
+        
+            Args:
+                constraints: Optional BatchConstraints instance, uses defaults if not provided
+        """
+
         logger.info("Initializing BatchProcessor with constraints: max_record=%d bytes, max_batch=%d bytes, max_records=%d",
                    constraints.max_record_size_bytes,
                    constraints.max_batch_size_bytes,
@@ -34,11 +44,30 @@ class BatchProcessor:
         self.metrics = BatchMetrics()
 
     def _get_record_size(self, record: str) -> int:
-        """Calculate size of record in bytes."""
+        """Calculate size of record in bytes.
+
+            Args:
+                record: String record to measure
+
+            Returns:
+                Size of record in bytes
+        """
+
         return sys.getsizeof(record.encode('utf-8'))
 
     def is_valid_record(self, record: str) -> bool:
-        """Check if record meets size constraints."""
+        """Check if record meets size constraints.
+            
+            Args:
+                record: String record to validate
+
+            Returns:
+                True if record size is within constraints, False otherwise
+
+            Raises:
+                TypeError: If record is not a string
+        """
+        
         if not isinstance(record, str):
             raise TypeError(f"Record must be string, got {type(record).__name__}")
         
@@ -56,7 +85,18 @@ class BatchProcessor:
             raise TypeError(f"Error processing record: {str(e)}")
 
     def create_batches(self, records: List[str]) -> Iterator[List[str]]:
-        """Process records into appropriately sized batches."""
+        """Process records into appropriately sized batches.
+            
+            Args:
+                records: List of string records to process
+
+            Returns:
+                Iterator yielding lists of records as batches
+
+            Raises:
+                TypeError: If records is not a list of strings
+        """
+
         if records is None or not isinstance(records, list):
             raise TypeError("'records' must be a non-empty list")
         
@@ -100,7 +140,12 @@ class BatchProcessor:
             raise
 
     def get_metrics(self) -> Dict[str, int]:
-        """Return current processing metrics."""
+        """Return current processing metrics.
+        
+            Returns:
+                Dictionary containing current metric values
+        """
+
         metrics = self.metrics.to_dict()
         logger.debug("Current metrics: %s", metrics)
         return metrics
@@ -108,7 +153,16 @@ class BatchProcessor:
 
 def process_records(records: List[str], 
                    constraints: BatchConstraints = BatchConstraints()) -> List[List[str]]:
-    """Convenience function for batch processing."""
+    """Convenience function for batch processing.
+
+        Args:
+            records: List of string records to process
+            constraints: Optional BatchConstraints instance
+
+        Returns:
+            List of batches, where each batch is a list of records
+    """
+    
     logger.info("Processing records using convenience function")
     processor = BatchProcessor(constraints)
     return list(processor.create_batches(records))

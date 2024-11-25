@@ -2,6 +2,7 @@
 
 A Python library for efficiently splitting large arrays of records into optimally sized batches for systems with specific size and count constraints. Particularly useful for preparing data for streaming services like AWS Kinesis.
 
+
 ## Features
 
 - Efficient batch splitting based on size and count constraints.

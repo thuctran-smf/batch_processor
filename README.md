@@ -203,10 +203,10 @@ jobs:
 
 The CI system handles changes as follows:
 
-- Code changes trigger full test suite through Common CI
-- Documentation changes trigger Common Skip, which succeeds automatically
-- Both workflows satisfy branch protection rules
-- No unnecessary test runs for documentation updates
+- Code changes trigger full test suite through Common CI.
+- Documentation changes trigger Common Skip.
+- Both workflows satisfy branch protection rules.
+- No unnecessary test runs for documentation updates.
 
 ## Demo
 

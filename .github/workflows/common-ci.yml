@@ -7,7 +7,7 @@ on:
     paths:
       - 'src/**'         
       - 'tests/**'       
-      - '.github/workflows/ci-code.yml'
+      - '.github/workflows/common-ci.yml'
       - 'requirements.txt'
       - 'demo.py'  
   pull_request:
@@ -16,7 +16,7 @@ on:
     paths:
       - 'src/**'
       - 'tests/**'
-      - '.github/workflows/ci-code.yml'
+      - '.github/workflows/common-ci.yml'
       - 'requirements.txt'
       - 'demo.py'  
 

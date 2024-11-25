@@ -4,15 +4,19 @@ Demonstration script for batch processor
 """
 
 import logging
+from typing import List
 from src.batch_processor import BatchProcessor
 from src.batch_constraints import BatchConstraints
 
-def create_test_records():
+def create_test_records() -> List[str]:
     """Create test records that will demonstrate batch splitting.
     
     Creates:
     - Many medium-sized records to force multiple batches
     - A few invalid records to show error handling
+    
+    Returns:
+        List[str]: A list of test records including valid and invalid cases
     """
     # Regular records (100KB each)
     medium_record = "x" * 100_000
@@ -26,7 +30,7 @@ def create_test_records():
     return (regular_records + 
             [oversized_record, empty_record, special_chars])
 
-def main():
+def main() -> None:
     # Configure file handler with DEBUG level
     file_handler = logging.FileHandler('batch_processor.log')
     file_handler.setLevel(logging.DEBUG)

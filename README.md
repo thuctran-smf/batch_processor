@@ -28,7 +28,6 @@ batch-processor/
 ├── .github/
 │   └── workflows/
 │       └── common-ci.yml           # CI pipeline configuration for core functionality
-│       └── common-skip.yml           # CI pipeline configuration for documentation
 ├── src/                     # Source code
 │   ├── __init__.py
 │   ├── batch_processor.py   # Core processing logic
@@ -144,29 +143,36 @@ python -m unittest tests/test_batch_processor.py
 
 ## Continuous Integration
 
-The project uses GitHub Actions with a dual-workflow system for efficient CI/CD:
+The project uses GitHub Actions with a streamlined Code CI workflow that differentiates between code and documentation changes, ensuring only relevant tests are run.
 
 ### Common CI
 
 Main workflow that runs when Python code is modified:
 
 ```yaml
-name: Common CI
+name: Code CI
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - 'demo.py'
-      - 'requirements.txt'
-      - '.github/workflows/common-ci.yml'
+    branches:
+      - main
+    paths-ignore:  # Ignore documentation changes
+      - '**/*.md'
+      - 'docs/**'
+      - 'README.md'
+      - '.gitignore'
   pull_request:
-    branches: [main]
+    branches:
+      - main
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'README.md'
+      - '.gitignore'
 
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -178,35 +184,11 @@ jobs:
     - Dependency caching for faster builds
 ```
 
-### Skip Workflow
-
-Complementary workflow that automatically succeeds for documentation changes:
-
-```yaml
-name: Common Skip
-
-on:
-  pull_request:
-    paths:
-      - "**/*.md"
-      - "docs/**"
-      - ".gitignore"
-      - "README.md"
-
-jobs:
-  test:
-    if: false
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Skipping tests"
-```
 
 The CI system handles changes as follows:
 
-- Code changes trigger full test suite through Common CI
-- Documentation changes trigger Common Skip, which succeeds automatically
-- Both workflows satisfy branch protection rules
-- No unnecessary test runs for documentation updates
+- Code changes trigger full test suite through Common CI.
+- Documentation changes will not trigger the CI workflow because of the paths-ignore setting.
 
 ## Demo
 

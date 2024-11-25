@@ -28,7 +28,6 @@ batch-processor/
 ├── .github/
 │   └── workflows/
 │       └── common-ci.yml           # CI pipeline configuration for core functionality
-│       └── common-skip.yml           # CI pipeline configuration for documentation
 ├── src/                     # Source code
 │   ├── __init__.py
 │   ├── batch_processor.py   # Core processing logic

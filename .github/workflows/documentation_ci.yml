@@ -1,0 +1,30 @@
+name: Documentation CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.md'
+      - '.github/workflows/ci-docs.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.md'
+      - '.github/workflows/ci-docs.yml'
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Markdown Lint
+      uses: DavidAnson/markdownlint-cli2-action@v11
+      with:
+        globs: |
+          **.md
+          
+    - name: Check Markdown links
+      uses: gaurav-nelson/github-action-markdown-link-check@v1

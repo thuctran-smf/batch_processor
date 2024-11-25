@@ -26,8 +26,8 @@ Strict limitations on batch size and record counts are often applied when ingest
 batch-processor/
 ├── .github/
 │   └── workflows/
-│       └── core_function_ci.yml           # CI pipeline configuration for core functionality
-│       └── documentation_ci.yml           # CI pipeline configuration for documentation
+│       └── common-ci.yml           # CI pipeline configuration for core functionality
+│       └── common-skip.yml           # CI pipeline configuration for documentation
 ├── src/                     # Source code
 │   ├── __init__.py
 │   ├── batch_processor.py   # Core processing logic
@@ -143,14 +143,14 @@ python -m unittest tests/test_batch_processor.py
 
 ## Continuous Integration
 
-The project uses GitHub Actions for automated testing and validation:
+The project uses GitHub Actions with a dual-workflow system for efficient CI/CD:
 
-### Code CI
+### Common CI
 
-Runs when Python code is modified:
+Main workflow that runs when Python code is modified:
 
 ```yaml
-name: Code CI
+name: Common CI
 
 on:
   push:
@@ -160,7 +160,7 @@ on:
       - 'tests/**'
       - 'demo.py'
       - 'requirements.txt'
-      - '.github/workflows/ci-code.yml'
+      - '.github/workflows/common-ci.yml'
   pull_request:
     branches: [main]
 
@@ -177,50 +177,35 @@ jobs:
     - Dependency caching for faster builds
 ```
 
-### Documentation CI
+### Skip Workflow
 
-Runs when documentation files are modified:
+Complementary workflow that automatically succeeds for documentation changes:
 
 ```yaml
-name: Documentation CI
+name: Common Skip
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '**.md'
-      - 'docs/**'
-      - '.github/workflows/ci-docs.yml'
   pull_request:
-    branches: [main]
+    paths:
+      - "**/*.md"
+      - "docs/**"
+      - ".gitignore"
+      - "README.md"
 
 jobs:
-  validate-docs:
+  test:
+    if: false
+    runs-on: ubuntu-latest
     steps:
-    - Markdown linting
-    - Link checking
+      - run: echo "Skipping tests"
 ```
 
-The CI pipelines run automatically on:
+The CI system handles changes as follows:
 
-- Push to main branch
-- Pull requests to main branch
-- Changes to specific file paths per workflow
-
-Code CI performs:
-
-1. Python environment setup (3.12)
-2. Dependency installation with caching
-3. Static type checking with mypy on source code and demo script
-4. Unit tests with pytest
-
-Documentation CI performs:
-
-1. Markdown formatting validation
-2. Documentation link checking
-3. Other documentation quality checks
-
-Both workflows must pass for changes to be merged into the main branch through branch protection rules.
+- Code changes trigger full test suite through Common CI
+- Documentation changes trigger Common Skip, which succeeds automatically
+- Both workflows satisfy branch protection rules
+- No unnecessary test runs for documentation updates
 
 ## Demo
 

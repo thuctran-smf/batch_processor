@@ -4,17 +4,17 @@ A Python library for efficiently splitting large arrays of records into optimall
 
 ## Features
 
-- Clean, type-safe implementation using dataclasses and type hints
-- Efficient batch splitting based on size and count constraints
-- Comprehensive error handling and input validation
-- Detailed logging with both file and console output
-- Extensive test coverage
+- Efficient batch splitting based on size and count constraints.
+- Clean, type-safe implementation using dataclasses and type hints.
+- Comprehensive error handling and input validation.
+- Detailed logging with both file and console output.
+- Extensive unit test.
 - Automated CI/CD pipeline with GitHub Actions
 - Zero external dependencies beyond Python standard library
 
-## Problem Statement
+## Batch requirements
 
-When sending large amounts of data to streaming services, there are often strict limitations on batch sizes and record counts. This library helps optimize data transmission by automatically splitting input records into appropriate batches while respecting the following constraints:
+Strict limitations on batch size and record counts are often applied when ingesting large amounts of data to streaming services. This library helps optimize data transmission by automatically splitting input records into appropriate batches while respecting the following constraints:
 
 - Maximum individual record size: 1 MB
 - Maximum batch size: 5 MB
@@ -26,7 +26,8 @@ When sending large amounts of data to streaming services, there are often strict
 batch-processor/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml           # CI pipeline configuration
+│       └── common-ci.yml           # CI pipeline configuration for core functionality
+│       └── common-skip.yml           # CI pipeline configuration for documentation
 ├── src/                     # Source code
 │   ├── __init__.py
 │   ├── batch_processor.py   # Core processing logic
@@ -59,7 +60,7 @@ constraints = BatchConstraints(
 
 ### BatchMetrics
 
-Clean metrics collection using dataclass:
+Metrics collection using dataclass:
 
 ```python
 metrics = processor.get_metrics()
@@ -74,7 +75,7 @@ print(metrics)
 
 ### BatchProcessor
 
-Main processing class with clear separation of concerns:
+Main processing class with separation of concerns:
 
 ```python
 from src.batch_processor import BatchProcessor
@@ -90,7 +91,7 @@ for batch in processor.create_batches(records):
 
 ## Error Handling
 
-The code includes comprehensive error handling with clear error messages:
+The code includes error handling with clear error messages:
 
 ```python
 # Type validation
@@ -142,10 +143,14 @@ python -m unittest tests/test_batch_processor.py
 
 ## Continuous Integration
 
-The project uses GitHub Actions for automated testing and validation:
+The project uses GitHub Actions with a dual-workflow system for efficient CI/CD:
+
+### Common CI
+
+Main workflow that runs when Python code is modified:
 
 ```yaml
-name: CI
+name: Common CI
 
 on:
   push:
@@ -153,7 +158,9 @@ on:
     paths:
       - 'src/**'
       - 'tests/**'
-      - '.github/workflows/ci.yml'
+      - 'demo.py'
+      - 'requirements.txt'
+      - '.github/workflows/common-ci.yml'
   pull_request:
     branches: [main]
 
@@ -165,23 +172,40 @@ jobs:
         python-version: ["3.12"]
 
     steps:
-    - Type checking with mypy
+    - Type checking with mypy for src/ and demo.py
     - Unit tests with pytest
     - Dependency caching for faster builds
 ```
 
-The CI pipeline runs automatically on:
+### Skip Workflow
 
-- Push to main branch
-- Pull requests to main branch
-- Changes to source code, tests, or CI configuration
+Complementary workflow that automatically succeeds for documentation changes:
 
-Each run performs:
+```yaml
+name: Common Skip
 
-1. Python environment setup (3.12)
-2. Dependency installation with caching
-3. Static type checking with mypy
-4. Unit tests with pytest
+on:
+  pull_request:
+    paths:
+      - "**/*.md"
+      - "docs/**"
+      - ".gitignore"
+      - "README.md"
+
+jobs:
+  test:
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Skipping tests"
+```
+
+The CI system handles changes as follows:
+
+- Code changes trigger full test suite through Common CI
+- Documentation changes trigger Common Skip, which succeeds automatically
+- Both workflows satisfy branch protection rules
+- No unnecessary test runs for documentation updates
 
 ## Demo
 

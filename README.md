@@ -192,6 +192,12 @@ The CI system handles changes as follows:
 
 ## Demo
 
+Install the Dependencies from requirements.txt
+
+```bash
+pip install -r requirements.txt
+```
+
 Run the demonstration script to see clean code in action:
 
 ```bash
